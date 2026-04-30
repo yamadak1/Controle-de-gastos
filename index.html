@@ -13,15 +13,9 @@
 
         /* Estilo das Telas de Bloqueio */
         #login-screen, #update-pass-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #121212;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10000;
         }
 
         .hidden { display: none !important; }
@@ -36,7 +30,7 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-bg); margin: 0; transition: 0.3s; overflow-x: hidden; }
         header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         
-        /* Área do Usuário no Header */
+        /* Área do Usuário */
         .user-header-area { display: flex; align-items: center; gap: 10px; }
         .profile-container { position: relative; width: 40px; height: 40px; }
         .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; cursor: pointer; background: #eee; }
@@ -67,9 +61,15 @@
         .remember-box { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #ccc; margin: 5px 0; }
         .remember-box input { width: auto; margin: 0; }
 
-        /* Estilo para os botões lado a lado */
         .flex-btns { display: flex; gap: 10px; }
-        .flex-btns button { flex: 1; margin: 0; }
+        .flex-btns button { flex: 1; margin: 0; padding: 10px; font-size: 14px;}
+
+        .user-log-text { font-size: 11px; color: #888; display: block; margin-top: 3px; font-weight: normal; }
+        body.dark-mode .user-log-text { color: #aaa; }
+
+        /* ADIÇÃO: Estilo do Gasto Fixo */
+        .fixo-box { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--primary); font-weight: bold; margin: 10px 0; }
+        .fixo-box input { width: auto; margin: 0; }
     </style>
 </head>
 <body>
@@ -77,7 +77,7 @@
     <div id="login-screen">
         <div class="card" style="width: 85%; max-width: 320px; text-align: center;">
             <h2 style="color: var(--primary)">Família Silva</h2>
-            <input type="text" id="user-login" placeholder="Seu Nome">
+            <input type="text" id="user-login" placeholder="Seu Nome (Arthur ou Natasha)">
             <input type="password" id="user-pass" placeholder="Senha (Padrão: 1234)">
             <div class="remember-box">
                 <input type="checkbox" id="remember-me"> <label for="remember-me">Lembrar de mim</label>
@@ -147,6 +147,12 @@
                     <input type="number" id="g-parc" value="1" placeholder="Número de Parcelas">
                 </div>
                 <input type="text" id="g-desc" placeholder="Descrição (Opcional)">
+                
+                <div class="fixo-box">
+                    <input type="checkbox" id="g-fixo"> 
+                    <label for="g-fixo">📌 Tornar este gasto fixo (Todo mês)</label>
+                </div>
+
                 <button class="btn-main" style="background: var(--danger);" onclick="salvar('saida')">Confirmar Gasto</button>
             </div>
         </section>
@@ -162,11 +168,21 @@
 
         <section id="sec-acompanhamento" class="page hidden">
             <div class="card"><select id="filt-mes" onchange="render()"></select></div>
+            
             <div class="dashboard-grid">
                 <div class="stat-box" style="background: var(--success)">Entradas<div id="t-in">R$ 0</div></div>
                 <div class="stat-box" style="background: var(--danger)">Pagas<div id="t-out">R$ 0</div></div>
                 <div class="stat-box" style="background: var(--primary); grid-column: span 2;">Saldo no Mês<div id="t-s">R$ 0</div></div>
             </div>
+
+            <div class="card" id="resumo-usuarios" style="margin-top:10px; font-size: 13px; text-align: center; padding: 15px;"></div>
+
+            <div class="flex-btns" style="margin-top: 15px;">
+                <button class="btn-main" id="btn-filt-todos" onclick="setFiltro('todos')" style="background: var(--primary);">Todos</button>
+                <button class="btn-main" id="btn-filt-pend" onclick="setFiltro('pendentes')" style="background: #7f8fa6;">Pendentes</button>
+                <button class="btn-main" id="btn-filt-pagos" onclick="setFiltro('pagos')" style="background: #7f8fa6;">Pagos</button>
+            </div>
+
             <div class="card" id="lista" style="margin-top:10px"></div>
         </section>
 
@@ -178,7 +194,7 @@
                     <div><small>Gastos</small><br><b style="color:var(--danger); font-size:18px" id="a-out">R$ 0</b></div>
                 </div>
                 <div class="stat-box" style="background: var(--primary); margin-bottom:15px">Sobra Anual Líquida<div id="a-s" style="font-size:20px">R$ 0</div></div>
-                <button class="btn-main" style="background: #25d366;" onclick="enviarWhats()">📲 Enviar Backup p/ WhatsApp</button>
+                <button class="btn-main" style="background: #25d366;" onclick="enviarWhatsGeral()">📲 Enviar Backup p/ WhatsApp</button>
             </div>
             <div class="card" id="anual-metas-lista"></div>
         </section>
@@ -186,7 +202,7 @@
         <section id="sec-metas" class="page hidden">
             <div class="card">
                 <h2>🎯 Nova Meta</h2>
-                <input type="text" id="m-nome" placeholder="Ex: Yamaha R15">
+                <input type="text" id="m-nome" placeholder="Ex: Viagem, Reforma...">
                 <input type="number" id="m-alvo" placeholder="Valor Objetivo R$">
                 <button class="btn-main" style="background: var(--primary);" onclick="novaMeta()">Criar Meta</button>
                 <hr style="margin: 20px 0; opacity: 0.2;">
@@ -210,10 +226,15 @@
     </main>
 
     <script>
+        // ADIÇÃO: Configurações de números e nomes
+        const TEL_ARTHUR = "5585982008344";
+        const TEL_NATASHA = "5585982007621";
+
         let db = JSON.parse(localStorage.getItem('fin_fam_db')) || { movs: [], metas: [], config: { pass: "1234", foto: "" } };
         if (!db.config) db.config = { pass: "1234", foto: "" };
 
         let userAtivo = "";
+        let filtroLista = 'todos'; 
         const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
         window.onload = () => {
@@ -241,9 +262,7 @@
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onloadend = function() {
-                db.config.foto = reader.result;
-                document.getElementById('user-photo').src = reader.result;
-                save();
+                db.config.foto = reader.result; document.getElementById('user-photo').src = reader.result; save();
             }
             if(file) reader.readAsDataURL(file);
         }
@@ -284,13 +303,22 @@
         function salvar(tipo) {
             let v = parseFloat(tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value);
             if (isNaN(v)) return;
+            
+            // ADIÇÃO: Captura se é fixo
+            let fixo = tipo === 'saida' ? document.getElementById('g-fixo').checked : false;
+
             db.movs.push({
-                id: Date.now(), tipo, v, d: (tipo === 'saida' ? document.getElementById('g-desc').value : document.getElementById('l-desc').value) || "Registro",
+                id: Date.now(), tipo, v, 
+                d: (tipo === 'saida' ? document.getElementById('g-desc').value : document.getElementById('l-desc').value) || "Registro",
                 cat: tipo === 'saida' ? document.getElementById('g-cat').value : "💰",
                 totalParc: (tipo === 'saida' && document.getElementById('g-forma').value === 'cartao') ? parseInt(document.getElementById('g-parc').value) || 1 : 1,
+                fixo: fixo, // ADIÇÃO
                 pagas: [], mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
             });
             save(); render(); alert("Salvo!");
+            document.getElementById('g-valor').value = ""; document.getElementById('l-valor').value = "";
+            document.getElementById('g-desc').value = ""; document.getElementById('l-desc').value = "";
+            if(document.getElementById('g-fixo')) document.getElementById('g-fixo').checked = false;
         }
 
         function novaMeta() {
@@ -304,10 +332,7 @@
                 document.getElementById('m-update-area').classList.remove('hidden');
                 let perc = Math.min((meta.atual/meta.a)*100, 100).toFixed(1);
                 document.getElementById('m-preview-bar').style.width = perc + "%";
-                document.getElementById('m-preview-details').innerHTML = `
-                    <span>Acumulado: <b>R$ ${meta.atual.toFixed(2)}</b></span>
-                    <span>Alvo: <b>R$ ${meta.a.toFixed(2)}</b></span>
-                `;
+                document.getElementById('m-preview-details').innerHTML = `<span>Acumulado: <b>R$ ${meta.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${meta.a.toFixed(2)}</b></span>`;
             } else document.getElementById('m-update-area').classList.add('hidden');
         }
 
@@ -319,19 +344,37 @@
                 meta.atual += val;
                 db.movs.push({
                     id: Date.now(), tipo: 'saida', d: (val > 0 ? "Guardado: " : "Retirado: ") + meta.n, v: Math.abs(val), cat: "🎯", 
-                    totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear()], 
+                    totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear() + "|" + userAtivo], 
                     mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
                 });
-                save(); render();
-                document.getElementById('m-valor-deposito').value = "";
-                updateMetaPreview();
+                save(); render(); document.getElementById('m-valor-deposito').value = ""; updateMetaPreview();
             }
         }
 
         function darBaixa(id, m) {
             let i = db.movs.find(x => x.id === id);
-            i.pagas.push(m + "-" + new Date().getFullYear());
+            i.pagas.push(m + "-" + new Date().getFullYear() + "|" + userAtivo);
             save(); render();
+        }
+
+        // ADIÇÃO: Lógica Inteligente de Destinatário e Mensagem
+        function enviarNotificacaoWhats(desc, valor, status) {
+            // Se Arthur logado -> Natasha recebe. Se Natasha logada -> Arthur recebe.
+            let destino = (userAtivo.toLowerCase().includes('arthur')) ? TEL_NATASHA : TEL_ARTHUR;
+            
+            let msg = status === 'pago' 
+                ? `Amor, fiz o pagamento da conta: *${desc}* no valor de R$ ${valor.toFixed(2)}! ✅`
+                : `Amor, a conta: *${desc}* no valor de R$ ${valor.toFixed(2)} está pendente. Precisamos pagar! ⏳`;
+            
+            window.open(`https://wa.me/${destino}?text=${encodeURIComponent(msg)}`);
+        }
+
+        function setFiltro(f) {
+            filtroLista = f;
+            document.getElementById('btn-filt-todos').style.background = f === 'todos' ? 'var(--primary)' : '#7f8fa6';
+            document.getElementById('btn-filt-pend').style.background = f === 'pendentes' ? 'var(--primary)' : '#7f8fa6';
+            document.getElementById('btn-filt-pagos').style.background = f === 'pagos' ? 'var(--primary)' : '#7f8fa6';
+            render();
         }
 
         function render() {
@@ -339,23 +382,65 @@
             const aSel = new Date().getFullYear();
             const lista = document.getElementById('lista');
             lista.innerHTML = `<h3>Registros de ${mesesNomes[mSel]}</h3>`;
+            
             let si=0, so=0, ani=0, ano=0;
+            let totaisUsuarios = {}; 
 
             db.movs.forEach(m => {
+                // ADIÇÃO: Lógica de exibição para Fixos ou Mês Atual
                 let diff = (mSel - m.mesI) + (12 * (aSel - m.anoI));
                 let pAt = diff + 1;
                 let vM = m.v / m.totalParc;
+                let autorCriacao = m.autor ? m.autor : 'Desconhecido';
+
+                // Se for fixo, aparece em todos os meses após a criação
+                let mostrarNoMes = (m.mesI === mSel && m.anoI === aSel) || (m.fixo && (m.anoI < aSel || (m.anoI === aSel && m.mesI <= mSel)));
+
                 if(m.tipo === 'entrada' && m.mesI === mSel) {
                     si += m.v;
-                    lista.innerHTML += `<div class="item-row"><span>💰 ${m.d}</span><b>R$ ${m.v.toFixed(2)}</b></div>`;
-                } else if(m.tipo === 'saida' && pAt > 0 && pAt <= m.totalParc) {
-                    let pago = m.pagas.includes(mSel + "-" + aSel);
+                    if(filtroLista === 'todos' || filtroLista === 'pagos') {
+                        lista.innerHTML += `
+                            <div class="item-row">
+                                <div><span>💰 ${m.d}</span><span class="user-log-text">Inserido por: ${autorCriacao}</span></div>
+                                <b>R$ ${m.v.toFixed(2)}</b>
+                            </div>`;
+                    }
+                } else if(m.tipo === 'saida' && ( (pAt > 0 && pAt <= m.totalParc) || (m.fixo && mostrarNoMes) )) {
+                    
+                    if (!totaisUsuarios[autorCriacao]) totaisUsuarios[autorCriacao] = 0;
+                    totaisUsuarios[autorCriacao] += vM;
+
+                    let tagPagamento = m.pagas.find(p => p.startsWith(mSel + "-" + aSel));
+                    let pago = !!tagPagamento;
+                    let autorBaixa = (pago && tagPagamento.includes('|')) ? tagPagamento.split('|')[1] : "";
+
                     if(pago) so += vM;
-                    lista.innerHTML += `<div class="item-row"><span>${m.cat} ${m.d}</span><span>R$ ${vM.toFixed(2)} ${!pago ? `<button onclick="darBaixa(${m.id},${mSel})">Pagar</button>` : '✅'}</span></div>`;
+
+                    let mostrarItem = true;
+                    if (filtroLista === 'pendentes' && pago) mostrarItem = false;
+                    if (filtroLista === 'pagos' && !pago) mostrarItem = false;
+                    
+                    if (mostrarItem) {
+                        lista.innerHTML += `
+                            <div class="item-row">
+                                <div>
+                                    <span>${m.fixo ? '📌 ' : ''}${m.cat} ${m.d}</span>
+                                    <span class="user-log-text">Criado por: ${autorCriacao} ${pago && autorBaixa ? `<br><span style="color: var(--success);">Pago por: ${autorBaixa}</span>` : ''}</span>
+                                </div>
+                                <span style="text-align: right;">
+                                    R$ ${vM.toFixed(2)}<br>
+                                    ${!pago 
+                                        ? `<button onclick="darBaixa(${m.id},${mSel})" style="padding: 6px; margin-top: 5px; font-size: 12px; background: var(--success); color: white; border: none; border-radius: 4px;">Pagar</button>
+                                           <button onclick="enviarNotificacaoWhats('${m.d}', ${vM}, 'pend')" style="padding: 6px; font-size: 12px; background: var(--warning); color: black; border: none; border-radius: 4px; margin-left: 5px;">🔔</button>` 
+                                        : `<span style="font-size:12px; color:var(--success);">✅ Pago</span> <button onclick="enviarNotificacaoWhats('${m.d}', ${vM}, 'pago')" style="padding: 4px 6px; font-size: 11px; background: #25D366; color: white; border: none; border-radius: 4px; margin-left: 5px; cursor: pointer;">📲 Avisar</button>`}
+                                </span>
+                            </div>`;
+                    }
                 }
+                
                 if(m.anoI === aSel) {
                     if(m.tipo === 'entrada') ani += m.v;
-                    m.pagas.forEach(p => { if(p.endsWith(aSel)) ano += vM; });
+                    m.pagas.forEach(p => { if(p.includes(aSel.toString())) ano += vM; });
                 }
             });
 
@@ -366,6 +451,18 @@
             document.getElementById('a-out').innerText = "R$ " + ano.toFixed(2);
             document.getElementById('a-s').innerText = "R$ " + (ani - ano).toFixed(2);
             document.getElementById('ano-txt').innerText = aSel;
+
+            let boxResumo = document.getElementById('resumo-usuarios');
+            let htmlResumo = "<strong style='display:block; margin-bottom: 8px; color: var(--primary)'>Quem inseriu mais gastos no mês:</strong><div style='display:flex; justify-content: space-around;'>";
+            if (Object.keys(totaisUsuarios).length === 0) {
+                htmlResumo += "<span>Nenhum gasto registrado ainda.</span>";
+            } else {
+                for (let u in totaisUsuarios) {
+                    htmlResumo += `<span>${u}: <b style="color:var(--danger)">R$ ${totaisUsuarios[u].toFixed(2)}</b></span>`;
+                }
+            }
+            htmlResumo += "</div>";
+            boxResumo.innerHTML = htmlResumo;
 
             const sel = document.getElementById('m-select-update');
             const lMetas = document.getElementById('lista-metas');
@@ -382,7 +479,7 @@
             sel.value = valAnt;
         }
 
-        function enviarWhats() {
+        function enviarWhatsGeral() {
             let msg = `📊 *BALANÇO FAMILIAR ${new Date().getFullYear()}*`;
             window.open(`https://wa.me/?text=${msg}`);
         }
