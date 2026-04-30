@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Familiar Silva</title>
+    <style>
+        :root {
+            --primary: #4a69bd; --success: #2ecc71; --danger: #e74c3c;
+            --warning: #f1c40f; --dark-bg: #2f3542; --light-bg: #dfe6e9;
+            --card-white: #ffffff;
+        }
+
+        /* Estilo das Telas de Bloqueio */
+        #login-screen, #update-pass-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #121212;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Layout Geral */
+        body.dark-mode { background-color: #121212; color: #ffffff; }
+        body.dark-mode .card { background: #1e1e1e; border: 1px solid #333; }
+        body.dark-mode input, body.dark-mode select { background: #2d2d2d; color: white; border-color: #444; }
+        body.dark-mode .item-row { border-color: #333; }
+        body.dark-mode #sidebar { background: #000; }
+
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-bg); margin: 0; transition: 0.3s; overflow-x: hidden; }
+        header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        
+        /* Área do Usuário no Header */
+        .user-header-area { display: flex; align-items: center; gap: 10px; }
+        .profile-container { position: relative; width: 40px; height: 40px; }
+        .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; cursor: pointer; background: #eee; }
+
+        #sidebar { position: fixed; left: -280px; top: 0; width: 260px; height: 100%; background: var(--dark-bg); color: white; transition: 0.3s; z-index: 2000; padding-top: 20px; }
+        #sidebar.active { left: 0; }
+        #sidebar li { padding: 18px 25px; border-bottom: 1px solid #3d4451; list-style: none; cursor: pointer; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .overlay.active { display: block; }
+
+        main { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { background: var(--card-white); border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn-main { border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { padding: 12px; border-radius: 10px; text-align: center; color: white; font-size: 14px; font-weight: bold; }
+
+        .item-row { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        
+        .progress-container { background: #e0e0e0; border-radius: 20px; height: 16px; margin: 10px 0; overflow: hidden; border: 1px solid #ccc; }
+        .progress-bar { background: linear-gradient(90deg, var(--success), #a2f3c1); height: 100%; transition: width 0.6s ease; width: 0%; }
+
+        .btn-dark-toggle { position: fixed; bottom: 20px; right: 20px; width: 54px; height: 54px; border-radius: 50%; background: var(--dark-bg); color: white; border: 2px solid #fff; cursor: pointer; font-size: 22px; z-index: 3000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        .remember-box { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #ccc; margin: 5px 0; }
+        .remember-box input { width: auto; margin: 0; }
+
+        /* Estilo para os botões lado a lado */
+        .flex-btns { display: flex; gap: 10px; }
+        .flex-btns button { flex: 1; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="card" style="width: 85%; max-width: 320px; text-align: center;">
+            <h2 style="color: var(--primary)">Família Silva</h2>
+            <input type="text" id="user-login" placeholder="Seu Nome">
+            <input type="password" id="user-pass" placeholder="Senha (Padrão: 1234)">
+            <div class="remember-box">
+                <input type="checkbox" id="remember-me"> <label for="remember-me">Lembrar de mim</label>
+            </div>
+            <button class="btn-main" style="background: var(--success);" onclick="autenticar()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="update-pass-screen" class="hidden">
+        <div class="card" style="width: 85%; max-width: 320px; text-align: center;">
+            <h3 style="color: var(--warning)">Segurança</h3>
+            <p style="font-size: 14px;">Você está usando a senha padrão 1234. Crie uma nova agora:</p>
+            <input type="password" id="new-pass" placeholder="Nova Senha">
+            <input type="password" id="confirm-new-pass" placeholder="Confirme a Nova Senha">
+            <button class="btn-main" style="background: var(--primary);" onclick="confirmarNovaSenha()">SALVAR NOVA SENHA</button>
+        </div>
+    </div>
+
+    <button class="btn-dark-toggle" onclick="toggleDarkMode()">🌓</button>
+
+    <header>
+        <div onclick="toggleMenu()" style="font-size: 24px; cursor:pointer">☰</div>
+        <h1 style="font-size: 18px; margin:0">Gestão Familiar</h1>
+        <div class="user-header-area">
+            <div id="user-display" style="font-size: 11px; background: rgba(255,255,255,0.2); padding: 5px; border-radius: 5px;"></div>
+            <div class="profile-container">
+                <input type="file" id="file-input" class="hidden" accept="image/*" onchange="uploadFoto(event)">
+                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-pic" onclick="document.getElementById('file-input').click()">
+            </div>
+        </div>
+    </header>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <nav id="sidebar">
+        <div style="padding: 20px; font-weight: bold; border-bottom: 1px solid #444;">MENU</div>
+        <ul>
+            <li onclick="navigate('gastos')">💸 Novo Gasto</li>
+            <li onclick="navigate('lucros')">💰 Nova Entrada</li>
+            <li onclick="navigate('acompanhamento')">📊 Mensal</li>
+            <li onclick="navigate('anual')">📅 Resumo Anual</li>
+            <li onclick="navigate('metas')">🎯 Metas</li>
+            <li onclick="location.reload()" style="color: var(--danger)">🚪 Sair</li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="sec-gastos" class="page">
+            <div class="card">
+                <h2>Registrar Gasto</h2>
+                <label style="font-size: 12px; opacity: 0.8;">O que é esse gasto?</label>
+                <select id="g-cat">
+                    <option value="🏠">🏠 Casa / Aluguel</option>
+                    <option value="⛽">⛽ Transporte / Moto</option>
+                    <option value="🍔">🍔 Lazer / Comida</option>
+                    <option value="🛒">🛒 Mercado</option>
+                    <option value="📱">📱 Contas / Internet</option>
+                    <option value="🔧">🔧 Manutenção</option>
+                    <option value="✨">✨ Outros</option>
+                </select>
+                <input type="number" id="g-valor" placeholder="Valor Total R$">
+                <select id="g-forma" onchange="checkCartao()">
+                    <option value="pix">Pix / À Vista</option>
+                    <option value="cartao">Cartão de Crédito</option>
+                </select>
+                <div id="box-parcelas" class="hidden">
+                    <input type="number" id="g-parc" value="1" placeholder="Número de Parcelas">
+                </div>
+                <input type="text" id="g-desc" placeholder="Descrição (Opcional)">
+                <button class="btn-main" style="background: var(--danger);" onclick="salvar('saida')">Confirmar Gasto</button>
+            </div>
+        </section>
+
+        <section id="sec-lucros" class="page hidden">
+            <div class="card">
+                <h2>Registrar Entrada</h2>
+                <input type="text" id="l-desc" placeholder="Origem do dinheiro">
+                <input type="number" id="l-valor" placeholder="Valor R$">
+                <button class="btn-main" style="background: var(--success);" onclick="salvar('entrada')">Confirmar Entrada</button>
+            </div>
+        </section>
+
+        <section id="sec-acompanhamento" class="page hidden">
+            <div class="card"><select id="filt-mes" onchange="render()"></select></div>
+            <div class="dashboard-grid">
+                <div class="stat-box" style="background: var(--success)">Entradas<div id="t-in">R$ 0</div></div>
+                <div class="stat-box" style="background: var(--danger)">Pagas<div id="t-out">R$ 0</div></div>
+                <div class="stat-box" style="background: var(--primary); grid-column: span 2;">Saldo no Mês<div id="t-s">R$ 0</div></div>
+            </div>
+            <div class="card" id="lista" style="margin-top:10px"></div>
+        </section>
+
+        <section id="sec-anual" class="page hidden">
+            <div class="card" style="text-align: center;">
+                <h2>Balanço de <span id="ano-txt"></span></h2>
+                <div style="display:flex; justify-content: space-around; margin: 20px 0;">
+                    <div><small>Ganhos</small><br><b style="color:var(--success); font-size:18px" id="a-in">R$ 0</b></div>
+                    <div><small>Gastos</small><br><b style="color:var(--danger); font-size:18px" id="a-out">R$ 0</b></div>
+                </div>
+                <div class="stat-box" style="background: var(--primary); margin-bottom:15px">Sobra Anual Líquida<div id="a-s" style="font-size:20px">R$ 0</div></div>
+                <button class="btn-main" style="background: #25d366;" onclick="enviarWhats()">📲 Enviar Backup p/ WhatsApp</button>
+            </div>
+            <div class="card" id="anual-metas-lista"></div>
+        </section>
+
+        <section id="sec-metas" class="page hidden">
+            <div class="card">
+                <h2>🎯 Nova Meta</h2>
+                <input type="text" id="m-nome" placeholder="Ex: Yamaha R15">
+                <input type="number" id="m-alvo" placeholder="Valor Objetivo R$">
+                <button class="btn-main" style="background: var(--primary);" onclick="novaMeta()">Criar Meta</button>
+                <hr style="margin: 20px 0; opacity: 0.2;">
+                <h3>Atualizar Progresso</h3>
+                <label style="font-size: 12px;">Selecione a Meta:</label>
+                <select id="m-select-update" onchange="updateMetaPreview()"></select>
+                <div id="m-update-area" class="hidden">
+                    <input type="number" id="m-valor-deposito" placeholder="Valor R$">
+                    <div class="progress-container"><div id="m-preview-bar" class="progress-bar"></div></div>
+                    
+                    <div id="m-preview-details" style="display:flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;"></div>
+                    
+                    <div class="flex-btns">
+                        <button class="btn-main" style="background: var(--success);" onclick="atualizarStatusMeta('add')">Adicionar</button>
+                        <button class="btn-main" style="background: var(--danger);" onclick="atualizarStatusMeta('sub')">Retirar</button>
+                    </div>
+                </div>
+            </div>
+            <div id="lista-metas"></div>
+        </section>
+    </main>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('fin_fam_db')) || { movs: [], metas: [], config: { pass: "1234", foto: "" } };
+        if (!db.config) db.config = { pass: "1234", foto: "" };
+
+        let userAtivo = "";
+        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        window.onload = () => {
+            if(localStorage.getItem('dark_mode_fam') === 'true') document.body.classList.add('dark-mode');
+            if(db.config.foto) document.getElementById('user-photo').src = db.config.foto;
+            
+            const f = document.getElementById('filt-mes');
+            if(f) {
+                f.innerHTML = "";
+                mesesNomes.forEach((m, i) => {
+                    let o = document.createElement('option'); o.value = i; o.text = m;
+                    if(i === new Date().getMonth()) o.selected = true;
+                    f.appendChild(o);
+                });
+            }
+
+            const savedUser = localStorage.getItem('saved_user_fam');
+            if(savedUser) {
+                document.getElementById('user-login').value = savedUser;
+                document.getElementById('remember-me').checked = true;
+            }
+        };
+
+        function uploadFoto(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                db.config.foto = reader.result;
+                document.getElementById('user-photo').src = reader.result;
+                save();
+            }
+            if(file) reader.readAsDataURL(file);
+        }
+
+        function autenticar() {
+            let u = document.getElementById('user-login').value.trim();
+            let p = document.getElementById('user-pass').value;
+            if(!u || p !== db.config.pass) return alert("Dados incorretos!");
+            userAtivo = u;
+            if(document.getElementById('remember-me').checked) localStorage.setItem('saved_user_fam', u);
+            else localStorage.removeItem('saved_user_fam');
+
+            if(p === "1234") {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('update-pass-screen').classList.remove('hidden');
+            } else entrarNoSistema();
+        }
+
+        function confirmarNovaSenha() {
+            let n1 = document.getElementById('new-pass').value;
+            if(!n1 || n1 === "1234") return alert("Senha inválida!");
+            db.config.pass = n1; save();
+            document.getElementById('update-pass-screen').classList.add('hidden');
+            entrarNoSistema();
+        }
+
+        function entrarNoSistema() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('user-display').innerText = "Olá, " + userAtivo;
+            render();
+        }
+
+        function toggleDarkMode() { let d = document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode_fam', d); }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+        function navigate(id) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById('sec-' + id).classList.remove('hidden'); toggleMenu(); render(); }
+        function checkCartao() { document.getElementById('box-parcelas').classList.toggle('hidden', document.getElementById('g-forma').value !== 'cartao'); }
+
+        function salvar(tipo) {
+            let v = parseFloat(tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value);
+            if (isNaN(v)) return;
+            db.movs.push({
+                id: Date.now(), tipo, v, d: (tipo === 'saida' ? document.getElementById('g-desc').value : document.getElementById('l-desc').value) || "Registro",
+                cat: tipo === 'saida' ? document.getElementById('g-cat').value : "💰",
+                totalParc: (tipo === 'saida' && document.getElementById('g-forma').value === 'cartao') ? parseInt(document.getElementById('g-parc').value) || 1 : 1,
+                pagas: [], mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
+            });
+            save(); render(); alert("Salvo!");
+        }
+
+        function novaMeta() {
+            let n = document.getElementById('m-nome').value, a = parseFloat(document.getElementById('m-alvo').value);
+            if (n && a) { db.metas.push({ id: Date.now(), n, a, atual: 0 }); save(); render(); }
+        }
+
+        function updateMetaPreview() {
+            const meta = db.metas.find(m => m.id == document.getElementById('m-select-update').value);
+            if(meta) {
+                document.getElementById('m-update-area').classList.remove('hidden');
+                let perc = Math.min((meta.atual/meta.a)*100, 100).toFixed(1);
+                document.getElementById('m-preview-bar').style.width = perc + "%";
+                document.getElementById('m-preview-details').innerHTML = `
+                    <span>Acumulado: <b>R$ ${meta.atual.toFixed(2)}</b></span>
+                    <span>Alvo: <b>R$ ${meta.a.toFixed(2)}</b></span>
+                `;
+            } else document.getElementById('m-update-area').classList.add('hidden');
+        }
+
+        function atualizarStatusMeta(operacao) {
+            let val = parseFloat(document.getElementById('m-valor-deposito').value);
+            let meta = db.metas.find(m => m.id == document.getElementById('m-select-update').value);
+            if (meta && !isNaN(val)) {
+                if(operacao === 'sub') val = -val;
+                meta.atual += val;
+                db.movs.push({
+                    id: Date.now(), tipo: 'saida', d: (val > 0 ? "Guardado: " : "Retirado: ") + meta.n, v: Math.abs(val), cat: "🎯", 
+                    totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear()], 
+                    mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
+                });
+                save(); render();
+                document.getElementById('m-valor-deposito').value = "";
+                updateMetaPreview();
+            }
+        }
+
+        function darBaixa(id, m) {
+            let i = db.movs.find(x => x.id === id);
+            i.pagas.push(m + "-" + new Date().getFullYear());
+            save(); render();
+        }
+
+        function render() {
+            const mSel = parseInt(document.getElementById('filt-mes').value || new Date().getMonth());
+            const aSel = new Date().getFullYear();
+            const lista = document.getElementById('lista');
+            lista.innerHTML = `<h3>Registros de ${mesesNomes[mSel]}</h3>`;
+            let si=0, so=0, ani=0, ano=0;
+
+            db.movs.forEach(m => {
+                let diff = (mSel - m.mesI) + (12 * (aSel - m.anoI));
+                let pAt = diff + 1;
+                let vM = m.v / m.totalParc;
+                if(m.tipo === 'entrada' && m.mesI === mSel) {
+                    si += m.v;
+                    lista.innerHTML += `<div class="item-row"><span>💰 ${m.d}</span><b>R$ ${m.v.toFixed(2)}</b></div>`;
+                } else if(m.tipo === 'saida' && pAt > 0 && pAt <= m.totalParc) {
+                    let pago = m.pagas.includes(mSel + "-" + aSel);
+                    if(pago) so += vM;
+                    lista.innerHTML += `<div class="item-row"><span>${m.cat} ${m.d}</span><span>R$ ${vM.toFixed(2)} ${!pago ? `<button onclick="darBaixa(${m.id},${mSel})">Pagar</button>` : '✅'}</span></div>`;
+                }
+                if(m.anoI === aSel) {
+                    if(m.tipo === 'entrada') ani += m.v;
+                    m.pagas.forEach(p => { if(p.endsWith(aSel)) ano += vM; });
+                }
+            });
+
+            document.getElementById('t-in').innerText = "R$ " + si.toFixed(2);
+            document.getElementById('t-out').innerText = "R$ " + so.toFixed(2);
+            document.getElementById('t-s').innerText = "R$ " + (si - so).toFixed(2);
+            document.getElementById('a-in').innerText = "R$ " + ani.toFixed(2);
+            document.getElementById('a-out').innerText = "R$ " + ano.toFixed(2);
+            document.getElementById('a-s').innerText = "R$ " + (ani - ano).toFixed(2);
+            document.getElementById('ano-txt').innerText = aSel;
+
+            const sel = document.getElementById('m-select-update');
+            const lMetas = document.getElementById('lista-metas');
+            const lAnualM = document.getElementById('anual-metas-lista');
+            const valAnt = sel.value;
+            sel.innerHTML = '<option value="">-- Escolha uma meta --</option>';
+            lMetas.innerHTML = ""; lAnualM.innerHTML = "<h3>Progresso das Metas</h3>";
+            db.metas.forEach(m => {
+                sel.innerHTML += `<option value="${m.id}">${m.n}</option>`;
+                let p = Math.min((m.atual/m.a)*100, 100).toFixed(1);
+                lMetas.innerHTML += `<div class="card"><b>${m.n}</b> (${p}%)<div class="progress-container"><div class="progress-bar" style="width:${p}%"></div></div><div style="display:flex; justify-content:space-between; font-size:12px"><span>Acumulado: <b>R$ ${m.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${m.a.toFixed(2)}</b></span></div></div>`;
+                lAnualM.innerHTML += `<div style="display:flex; justify-content:space-between; margin:8px 0"><span>${m.n}</span><b>${p}%</b></div>`;
+            });
+            sel.value = valAnt;
+        }
+
+        function enviarWhats() {
+            let msg = `📊 *BALANÇO FAMILIAR ${new Date().getFullYear()}*`;
+            window.open(`https://wa.me/?text=${msg}`);
+        }
+        function save() { localStorage.setItem('fin_fam_db', JSON.stringify(db)); }
+    </script>
+</body>
+</html>
