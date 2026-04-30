@@ -67,7 +67,6 @@
         .user-log-text { font-size: 11px; color: #888; display: block; margin-top: 3px; font-weight: normal; }
         body.dark-mode .user-log-text { color: #aaa; }
 
-        /* ADIÇÃO: Estilo do Gasto Fixo */
         .fixo-box { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--primary); font-weight: bold; margin: 10px 0; }
         .fixo-box input { width: auto; margin: 0; }
     </style>
@@ -226,20 +225,41 @@
     </main>
 
     <script>
-        // ADIÇÃO: Configurações de números e nomes
+        // CONFIGURAÇÕES DO SERVIDOR
+        const FIREBASE_URL = "https://gestao-de-finan-default-rtdb.firebaseio.com/.json"; 
+        
         const TEL_ARTHUR = "5585982008344";
         const TEL_NATASHA = "5585982007621";
 
-        let db = JSON.parse(localStorage.getItem('fin_fam_db')) || { movs: [], metas: [], config: { pass: "1234", foto: "" } };
-        if (!db.config) db.config = { pass: "1234", foto: "" };
-
+        let db = { movs: [], metas: [], config: { pass: "1234", foto: "" } };
         let userAtivo = "";
         let filtroLista = 'todos'; 
         const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+        // FUNÇÕES DE SINCRONIZAÇÃO FIREBASE
+        async function load() {
+            try {
+                const response = await fetch(FIREBASE_URL);
+                const data = await response.json();
+                if(data) {
+                    db = data;
+                    if(!db.movs) db.movs = [];
+                    if(!db.metas) db.metas = [];
+                    if(!db.config) db.config = { pass: "1234", foto: "" };
+                    render();
+                }
+            } catch(e) { console.error("Erro na carga."); }
+        }
+
+        async function save() {
+            try {
+                await fetch(FIREBASE_URL, { method: 'PUT', body: JSON.stringify(db) });
+            } catch(e) { alert("Erro ao sincronizar!"); }
+        }
+
         window.onload = () => {
+            load();
             if(localStorage.getItem('dark_mode_fam') === 'true') document.body.classList.add('dark-mode');
-            if(db.config.foto) document.getElementById('user-photo').src = db.config.foto;
             
             const f = document.getElementById('filt-mes');
             if(f) {
@@ -256,13 +276,16 @@
                 document.getElementById('user-login').value = savedUser;
                 document.getElementById('remember-me').checked = true;
             }
+            setInterval(load, 20000); // Atualiza do servidor a cada 20s
         };
 
         function uploadFoto(event) {
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onloadend = function() {
-                db.config.foto = reader.result; document.getElementById('user-photo').src = reader.result; save();
+                db.config.foto = reader.result; 
+                document.getElementById('user-photo').src = reader.result; 
+                save();
             }
             if(file) reader.readAsDataURL(file);
         }
@@ -283,7 +306,9 @@
 
         function confirmarNovaSenha() {
             let n1 = document.getElementById('new-pass').value;
+            let n2 = document.getElementById('confirm-new-pass').value;
             if(!n1 || n1 === "1234") return alert("Senha inválida!");
+            if(n1 !== n2) return alert("Senhas não conferem!");
             db.config.pass = n1; save();
             document.getElementById('update-pass-screen').classList.add('hidden');
             entrarNoSistema();
@@ -292,6 +317,7 @@
         function entrarNoSistema() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('user-display').innerText = "Olá, " + userAtivo;
+            if(db.config.foto) document.getElementById('user-photo').src = db.config.foto;
             render();
         }
 
@@ -303,8 +329,6 @@
         function salvar(tipo) {
             let v = parseFloat(tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value);
             if (isNaN(v)) return;
-            
-            // ADIÇÃO: Captura se é fixo
             let fixo = tipo === 'saida' ? document.getElementById('g-fixo').checked : false;
 
             db.movs.push({
@@ -312,10 +336,10 @@
                 d: (tipo === 'saida' ? document.getElementById('g-desc').value : document.getElementById('l-desc').value) || "Registro",
                 cat: tipo === 'saida' ? document.getElementById('g-cat').value : "💰",
                 totalParc: (tipo === 'saida' && document.getElementById('g-forma').value === 'cartao') ? parseInt(document.getElementById('g-parc').value) || 1 : 1,
-                fixo: fixo, // ADIÇÃO
+                fixo: fixo,
                 pagas: [], mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
             });
-            save(); render(); alert("Salvo!");
+            save(); render(); alert("Sincronizado!");
             document.getElementById('g-valor').value = ""; document.getElementById('l-valor').value = "";
             document.getElementById('g-desc').value = ""; document.getElementById('l-desc').value = "";
             if(document.getElementById('g-fixo')) document.getElementById('g-fixo').checked = false;
@@ -357,15 +381,11 @@
             save(); render();
         }
 
-        // ADIÇÃO: Lógica Inteligente de Destinatário e Mensagem
         function enviarNotificacaoWhats(desc, valor, status) {
-            // Se Arthur logado -> Natasha recebe. Se Natasha logada -> Arthur recebe.
             let destino = (userAtivo.toLowerCase().includes('arthur')) ? TEL_NATASHA : TEL_ARTHUR;
-            
             let msg = status === 'pago' 
                 ? `Amor, fiz o pagamento da conta: *${desc}* no valor de R$ ${valor.toFixed(2)}! ✅`
                 : `Amor, a conta: *${desc}* no valor de R$ ${valor.toFixed(2)} está pendente. Precisamos pagar! ⏳`;
-            
             window.open(`https://wa.me/${destino}?text=${encodeURIComponent(msg)}`);
         }
 
@@ -387,13 +407,11 @@
             let totaisUsuarios = {}; 
 
             db.movs.forEach(m => {
-                // ADIÇÃO: Lógica de exibição para Fixos ou Mês Atual
                 let diff = (mSel - m.mesI) + (12 * (aSel - m.anoI));
                 let pAt = diff + 1;
                 let vM = m.v / m.totalParc;
                 let autorCriacao = m.autor ? m.autor : 'Desconhecido';
 
-                // Se for fixo, aparece em todos os meses após a criação
                 let mostrarNoMes = (m.mesI === mSel && m.anoI === aSel) || (m.fixo && (m.anoI < aSel || (m.anoI === aSel && m.mesI <= mSel)));
 
                 if(m.tipo === 'entrada' && m.mesI === mSel) {
@@ -483,7 +501,6 @@
             let msg = `📊 *BALANÇO FAMILIAR ${new Date().getFullYear()}*`;
             window.open(`https://wa.me/?text=${msg}`);
         }
-        function save() { localStorage.setItem('fin_fam_db', JSON.stringify(db)); }
     </script>
 </body>
 </html>
