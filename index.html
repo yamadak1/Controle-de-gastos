@@ -77,7 +77,7 @@
         <div class="card" style="width: 85%; max-width: 320px; text-align: center;">
             <h2 style="color: var(--primary)">Família Silva</h2>
             <input type="text" id="user-login" placeholder="Seu Nome (Arthur ou Natasha)">
-            <input type="password" id="user-pass" placeholder="Senha (Padrão: 1234)">
+            <input type="password" id="user-pass" placeholder="Senha">
             <div class="remember-box">
                 <input type="checkbox" id="remember-me"> <label for="remember-me">Lembrar de mim</label>
             </div>
@@ -119,21 +119,32 @@
             <li onclick="navigate('acompanhamento')">📊 Mensal</li>
             <li onclick="navigate('anual')">📅 Resumo Anual</li>
             <li onclick="navigate('metas')">🎯 Metas</li>
+            <li onclick="navigate('config')" style="color: var(--warning)">🔑 Mudar Senha do Parceiro</li>
             <li onclick="location.reload()" style="color: var(--danger)">🚪 Sair</li>
         </ul>
     </nav>
 
     <main>
+        <section id="sec-config" class="page hidden">
+            <div class="card">
+                <h2>Gerenciar Senha</h2>
+                <p id="config-target-text" style="font-size: 14px; margin-bottom: 15px;"></p>
+                <input type="password" id="partner-new-pass" placeholder="Nova Senha para o Parceiro">
+                <input type="password" id="partner-confirm-pass" placeholder="Confirme a Senha">
+                <button class="btn-main" style="background: var(--primary);" onclick="mudarSenhaParceiro()">ATUALIZAR SENHA</button>
+            </div>
+        </section>
+
         <section id="sec-gastos" class="page">
             <div class="card">
                 <h2>Registrar Gasto</h2>
                 <label style="font-size: 12px; opacity: 0.8;">O que é esse gasto?</label>
                 <select id="g-cat">
-                    <option value="🏠">🏠 Casa / Aluguel</option>
-                    <option value="⛽">⛽ Transporte / Moto</option>
+                    <option value="🌐">🌐 Internet</option>
+                    <option value="✂️">✂️ Corte de cabelo</option>
                     <option value="🍔">🍔 Lazer / Comida</option>
                     <option value="🛒">🛒 Mercado</option>
-                    <option value="📱">📱 Contas / Internet</option>
+                    <option value="📶">📶 Dados móveis</option>
                     <option value="🔧">🔧 Manutenção</option>
                     <option value="✨">✨ Outros</option>
                 </select>
@@ -236,7 +247,6 @@
         let filtroLista = 'todos'; 
         const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        // FUNÇÕES DE SINCRONIZAÇÃO FIREBASE
         async function load() {
             try {
                 const response = await fetch(FIREBASE_URL);
@@ -276,7 +286,7 @@
                 document.getElementById('user-login').value = savedUser;
                 document.getElementById('remember-me').checked = true;
             }
-            setInterval(load, 20000); // Atualiza do servidor a cada 20s
+            setInterval(load, 20000);
         };
 
         function uploadFoto(event) {
@@ -304,6 +314,20 @@
             } else entrarNoSistema();
         }
 
+        function mudarSenhaParceiro() {
+            let n1 = document.getElementById('partner-new-pass').value;
+            let n2 = document.getElementById('partner-confirm-pass').value;
+            if(!n1) return alert("Digite a nova senha!");
+            if(n1 !== n2) return alert("Senhas não conferem!");
+            
+            db.config.pass = n1;
+            save();
+            alert("Senha do parceiro atualizada no servidor!");
+            document.getElementById('partner-new-pass').value = "";
+            document.getElementById('partner-confirm-pass').value = "";
+            navigate('acompanhamento');
+        }
+
         function confirmarNovaSenha() {
             let n1 = document.getElementById('new-pass').value;
             let n2 = document.getElementById('confirm-new-pass').value;
@@ -323,7 +347,20 @@
 
         function toggleDarkMode() { let d = document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode_fam', d); }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
-        function navigate(id) { document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); document.getElementById('sec-' + id).classList.remove('hidden'); toggleMenu(); render(); }
+        
+        function navigate(id) { 
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); 
+            document.getElementById('sec-' + id).classList.remove('hidden'); 
+            
+            if(id === 'config') {
+                let parceiro = userAtivo.toLowerCase().includes('arthur') ? 'Natasha' : 'Arthur';
+                document.getElementById('config-target-text').innerText = `Você está alterando a senha de acesso para: ${parceiro}`;
+            }
+            
+            toggleMenu(); 
+            render(); 
+        }
+
         function checkCartao() { document.getElementById('box-parcelas').classList.toggle('hidden', document.getElementById('g-forma').value !== 'cartao'); }
 
         function salvar(tipo) {
@@ -491,7 +528,7 @@
             db.metas.forEach(m => {
                 sel.innerHTML += `<option value="${m.id}">${m.n}</option>`;
                 let p = Math.min((m.atual/m.a)*100, 100).toFixed(1);
-                lMetas.innerHTML += `<div class="card"><b>${m.n}</b> (${p}%)<div class="progress-container"><div class="progress-bar" style="width:${p}%"></div></div><div style="display:flex; justify-content:space-between; font-size:12px"><span>Acumulado: <b>R$ ${m.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${m.a.toFixed(2)}</b></span></div></div>`;
+                lMetas.innerHTML += `<div class="card"><b>${m.n}</b> (${p}%)<div class="progress-container"><div class="progress-bar" style="width:${p}%\"></div></div><div style="display:flex; justify-content:space-between; font-size:12px"><span>Acumulado: <b>R$ ${m.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${m.a.toFixed(2)}</b></span></div></div>`;
                 lAnualM.innerHTML += `<div style="display:flex; justify-content:space-between; margin:8px 0"><span>${m.n}</span><b>${p}%</b></div>`;
             });
             sel.value = valAnt;
