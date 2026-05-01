@@ -11,7 +11,7 @@
             --card-white: #ffffff;
         }
 
-        /* Estilo das Telas de Bloqueio */
+        /* Telas de Bloqueio */
         #login-screen, #update-pass-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #121212; display: flex; flex-direction: column;
@@ -30,7 +30,6 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--light-bg); margin: 0; transition: 0.3s; overflow-x: hidden; }
         header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         
-        /* Área do Usuário */
         .user-header-area { display: flex; align-items: center; gap: 10px; }
         .profile-container { position: relative; width: 40px; height: 40px; }
         .profile-pic { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white; cursor: pointer; background: #eee; }
@@ -65,10 +64,10 @@
         .flex-btns button { flex: 1; margin: 0; padding: 10px; font-size: 14px;}
 
         .user-log-text { font-size: 11px; color: #888; display: block; margin-top: 3px; font-weight: normal; }
-        body.dark-mode .user-log-text { color: #aaa; }
-
         .fixo-box { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--primary); font-weight: bold; margin: 10px 0; }
         .fixo-box input { width: auto; margin: 0; }
+        
+        .btn-del { background: var(--danger); color: white; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -88,7 +87,7 @@
     <div id="update-pass-screen" class="hidden">
         <div class="card" style="width: 85%; max-width: 320px; text-align: center;">
             <h3 style="color: var(--warning)">Segurança</h3>
-            <p style="font-size: 14px;">Você está usando a senha padrão 1234. Crie uma nova agora:</p>
+            <p style="font-size: 14px;">Crie uma nova senha para sua conta:</p>
             <input type="password" id="new-pass" placeholder="Nova Senha">
             <input type="password" id="confirm-new-pass" placeholder="Confirme a Nova Senha">
             <button class="btn-main" style="background: var(--primary);" onclick="confirmarNovaSenha()">SALVAR NOVA SENHA</button>
@@ -138,7 +137,6 @@
         <section id="sec-gastos" class="page">
             <div class="card">
                 <h2>Registrar Gasto</h2>
-                <label style="font-size: 12px; opacity: 0.8;">O que é esse gasto?</label>
                 <select id="g-cat">
                     <option value="🌐">🌐 Internet</option>
                     <option value="✂️">✂️ Corte de cabelo</option>
@@ -157,12 +155,9 @@
                     <input type="number" id="g-parc" value="1" placeholder="Número de Parcelas">
                 </div>
                 <input type="text" id="g-desc" placeholder="Descrição (Opcional)">
-                
                 <div class="fixo-box">
-                    <input type="checkbox" id="g-fixo"> 
-                    <label for="g-fixo">📌 Tornar este gasto fixo (Todo mês)</label>
+                    <input type="checkbox" id="g-fixo"> <label for="g-fixo">📌 Tornar este gasto fixo</label>
                 </div>
-
                 <button class="btn-main" style="background: var(--danger);" onclick="salvar('saida')">Confirmar Gasto</button>
             </div>
         </section>
@@ -178,21 +173,17 @@
 
         <section id="sec-acompanhamento" class="page hidden">
             <div class="card"><select id="filt-mes" onchange="render()"></select></div>
-            
             <div class="dashboard-grid">
                 <div class="stat-box" style="background: var(--success)">Entradas<div id="t-in">R$ 0</div></div>
                 <div class="stat-box" style="background: var(--danger)">Pagas<div id="t-out">R$ 0</div></div>
                 <div class="stat-box" style="background: var(--primary); grid-column: span 2;">Saldo no Mês<div id="t-s">R$ 0</div></div>
             </div>
-
             <div class="card" id="resumo-usuarios" style="margin-top:10px; font-size: 13px; text-align: center; padding: 15px;"></div>
-
             <div class="flex-btns" style="margin-top: 15px;">
                 <button class="btn-main" id="btn-filt-todos" onclick="setFiltro('todos')" style="background: var(--primary);">Todos</button>
                 <button class="btn-main" id="btn-filt-pend" onclick="setFiltro('pendentes')" style="background: #7f8fa6;">Pendentes</button>
                 <button class="btn-main" id="btn-filt-pagos" onclick="setFiltro('pagos')" style="background: #7f8fa6;">Pagos</button>
             </div>
-
             <div class="card" id="lista" style="margin-top:10px"></div>
         </section>
 
@@ -217,14 +208,11 @@
                 <button class="btn-main" style="background: var(--primary);" onclick="novaMeta()">Criar Meta</button>
                 <hr style="margin: 20px 0; opacity: 0.2;">
                 <h3>Atualizar Progresso</h3>
-                <label style="font-size: 12px;">Selecione a Meta:</label>
                 <select id="m-select-update" onchange="updateMetaPreview()"></select>
                 <div id="m-update-area" class="hidden">
                     <input type="text" id="m-valor-deposito" placeholder="Valor R$" oninput="mascaraMoeda(this)" inputmode="numeric">
                     <div class="progress-container"><div id="m-preview-bar" class="progress-bar"></div></div>
-                    
                     <div id="m-preview-details" style="display:flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;"></div>
-                    
                     <div class="flex-btns">
                         <button class="btn-main" style="background: var(--success);" onclick="atualizarStatusMeta('add')">Adicionar</button>
                         <button class="btn-main" style="background: var(--danger);" onclick="atualizarStatusMeta('sub')">Retirar</button>
@@ -237,7 +225,6 @@
 
     <script>
         const FIREBASE_URL = "https://gestao-de-finan-default-rtdb.firebaseio.com/.json"; 
-        
         const TEL_ARTHUR = "5585982008344";
         const TEL_NATASHA = "5585982007621";
 
@@ -246,159 +233,127 @@
         let filtroLista = 'todos'; 
         const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        function mascaraMoeda(input) {
-            let valor = input.value.replace(/\D/g, "");
-            if (valor === "") { input.value = ""; return; }
-            valor = (parseInt(valor) / 100).toFixed(2) + "";
-            valor = valor.replace(".", ",");
-            valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-            input.value = "R$ " + valor;
+        function mascaraMoeda(i) {
+            let v = i.value.replace(/\D/g, "");
+            if (v === "") { i.value = ""; return; }
+            v = (parseInt(v) / 100).toFixed(2).replace(".", ",").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+            i.value = "R$ " + v;
         }
 
-        function desmascararMoeda(valorStr) {
-            if(!valorStr) return 0;
-            let numerico = String(valorStr).replace(/\D/g, "");
-            if(numerico === "") return 0;
-            return parseFloat(numerico) / 100;
+        function desmascararMoeda(s) {
+            if(!s) return 0;
+            let n = String(s).replace(/\D/g, "");
+            return n === "" ? 0 : parseFloat(n) / 100;
         }
 
         async function load() {
             try {
-                const response = await fetch(FIREBASE_URL);
-                const data = await response.json();
-                if(data) {
-                    db = data;
+                const r = await fetch(FIREBASE_URL);
+                const d = await r.json();
+                if(d) {
+                    db = d;
                     if(!db.movs) db.movs = [];
                     if(!db.metas) db.metas = [];
-                    if(!db.config) db.config = { foto: "", senhas: { arthur: "1234", natasha: "1234" } };
+                    if(!db.config) db.config = { senhas: { arthur: "1234", natasha: "1234" }, foto: "" };
                     render();
                 }
-            } catch(e) { console.error("Erro na carga."); }
+            } catch(e) { console.error("Erro carga"); }
         }
 
         async function save() {
-            try {
-                await fetch(FIREBASE_URL, { method: 'PUT', body: JSON.stringify(db) });
-            } catch(e) { alert("Erro ao sincronizar!"); }
+            try { await fetch(FIREBASE_URL, { method: 'PUT', body: JSON.stringify(db) }); } catch(e) { alert("Erro ao salvar"); }
         }
 
         window.onload = () => {
             load();
             if(localStorage.getItem('dark_mode_fam') === 'true') document.body.classList.add('dark-mode');
-            
             const f = document.getElementById('filt-mes');
-            if(f) {
-                f.innerHTML = "";
-                mesesNomes.forEach((m, i) => {
-                    let o = document.createElement('option'); o.value = i; o.text = m;
-                    if(i === new Date().getMonth()) o.selected = true;
-                    f.appendChild(o);
-                });
-            }
-
-            const savedUser = localStorage.getItem('saved_user_fam');
-            if(savedUser) {
-                document.getElementById('user-login').value = savedUser;
-                document.getElementById('remember-me').checked = true;
-            }
-            setInterval(load, 20000);
+            mesesNomes.forEach((m, i) => {
+                let o = document.createElement('option'); o.value = i; o.text = m;
+                if(i === new Date().getMonth()) o.selected = true;
+                f.appendChild(o);
+            });
+            const saved = localStorage.getItem('saved_user_fam');
+            if(saved) document.getElementById('user-login').value = saved;
         };
 
-        function uploadFoto(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onloadend = function() {
-                db.config.foto = reader.result; 
-                document.getElementById('user-photo').src = reader.result; 
-                save();
-            }
-            if(file) reader.readAsDataURL(file);
-        }
-
-        // FUNÇÃO DE AUTENTICAÇÃO CORRIGIDA
         function autenticar() {
-            let uInput = document.getElementById('user-login').value.trim();
-            let pInput = document.getElementById('user-pass').value;
-            
-            if(!uInput) return alert("Digite seu nome!");
-
-            let uKey = uInput.toLowerCase().includes('arthur') ? 'arthur' : (uInput.toLowerCase().includes('natasha') ? 'natasha' : null);
-            
-            if(!uKey || !db.config.senhas[uKey] || pInput !== db.config.senhas[uKey]) {
-                return alert("Dados incorretos!");
-            }
-            
+            const uInput = document.getElementById('user-login').value.trim().toLowerCase();
+            const pInput = document.getElementById('user-pass').value;
+            const uKey = uInput.includes('arthur') ? 'arthur' : (uInput.includes('natasha') ? 'natasha' : null);
+            if(!uKey || !db.config.senhas[uKey] || pInput !== db.config.senhas[uKey]) return alert("Usuário ou Senha incorretos!");
             userAtivo = uKey === 'arthur' ? 'Arthur' : 'Natasha';
-            
             if(document.getElementById('remember-me').checked) localStorage.setItem('saved_user_fam', uInput);
-            else localStorage.removeItem('saved_user_fam');
-
             if(pInput === "1234") {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('update-pass-screen').classList.remove('hidden');
-            } else {
-                entrarNoSistema();
-            }
+            } else entrarNoSistema();
         }
 
         function entrarNoSistema() {
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('update-pass-screen').classList.add('hidden'); // Garante que a tela de senha nova suma
+            document.getElementById('update-pass-screen').classList.add('hidden');
             document.getElementById('user-display').innerText = "Olá, " + userAtivo;
             if(db.config.foto) document.getElementById('user-photo').src = db.config.foto;
             render();
         }
 
-        function mudarSenhaParceiro() {
-            let n1 = document.getElementById('partner-new-pass').value;
-            let n2 = document.getElementById('partner-confirm-pass').value;
-            if(!n1) return alert("Digite a nova senha!");
-            if(n1 !== n2) return alert("Senhas não conferem!");
-            
-            let uKeyParceiro = userAtivo.toLowerCase() === 'arthur' ? 'natasha' : 'arthur';
-            db.config.senhas[uKeyParceiro] = n1;
-            
-            save();
-            alert("Senha do parceiro atualizada!");
-            document.getElementById('partner-new-pass').value = "";
-            document.getElementById('partner-confirm-pass').value = "";
-            navigate('acompanhamento');
-        }
-
         function confirmarNovaSenha() {
             let n1 = document.getElementById('new-pass').value;
             let n2 = document.getElementById('confirm-new-pass').value;
-            if(!n1 || n1 === "1234") return alert("Senha inválida!");
-            if(n1 !== n2) return alert("Senhas não conferem!");
-            
-            let uKey = userAtivo.toLowerCase() === 'arthur' ? 'arthur' : 'natasha';
-            db.config.senhas[uKey] = n1; 
-            
-            save();
-            entrarNoSistema();
+            if(!n1 || n1 === "1234" || n1 !== n2) return alert("Verifique as senhas!");
+            db.config.senhas[userAtivo.toLowerCase()] = n1;
+            save(); entrarNoSistema();
         }
 
-        function toggleDarkMode() { let d = document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode_fam', d); }
+        function mudarSenhaParceiro() {
+            let n1 = document.getElementById('partner-new-pass').value;
+            let n2 = document.getElementById('partner-confirm-pass').value;
+            if(n1 && n1 === n2) {
+                let pKey = userAtivo.toLowerCase() === 'arthur' ? 'natasha' : 'arthur';
+                db.config.senhas[pKey] = n1;
+                save(); alert("Senha do parceiro atualizada!");
+                navigate('acompanhamento');
+            } else alert("Senhas não conferem!");
+        }
+
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+        function toggleDarkMode() { let d = document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode_fam', d); }
         
         function navigate(id) { 
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden')); 
             document.getElementById('sec-' + id).classList.remove('hidden'); 
-            if(id === 'config') {
-                let parceiro = userAtivo.toLowerCase() === 'arthur' ? 'Natasha' : 'Arthur';
-                document.getElementById('config-target-text').innerText = `Você está alterando a senha de acesso para: ${parceiro}`;
-            }
-            toggleMenu(); 
-            render(); 
+            if(id === 'config') document.getElementById('config-target-text').innerText = `Alterando senha de: ${userAtivo.toLowerCase() === 'arthur' ? 'Natasha' : 'Arthur'}`;
+            toggleMenu(); render(); 
         }
 
         function checkCartao() { document.getElementById('box-parcelas').classList.toggle('hidden', document.getElementById('g-forma').value !== 'cartao'); }
 
-        function salvar(tipo) {
-            let vStr = tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value;
-            let v = desmascararMoeda(vStr);
-            if (v <= 0) return alert("Insira um valor válido!");
+        function uploadFoto(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => { db.config.foto = reader.result; document.getElementById('user-photo').src = reader.result; save(); };
+            if(file) reader.readAsDataURL(file);
+        }
 
+        // Funções de Exclusão
+        function excluirMov(id) {
+            if(confirm("Deseja realmente excluir este registro?")) {
+                db.movs = db.movs.filter(m => m.id !== id);
+                save(); render();
+            }
+        }
+
+        function excluirMeta(id) {
+            if(confirm("Deseja excluir permanentemente esta meta?")) {
+                db.metas = db.metas.filter(m => m.id !== id);
+                save(); render();
+            }
+        }
+
+        function salvar(tipo) {
+            let v = desmascararMoeda(tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value);
+            if (v <= 0) return alert("Valor inválido");
             db.movs.push({
                 id: Date.now(), tipo, v, 
                 d: (tipo === 'saida' ? document.getElementById('g-desc').value : document.getElementById('l-desc').value) || "Registro",
@@ -407,16 +362,23 @@
                 fixo: tipo === 'saida' ? document.getElementById('g-fixo').checked : false,
                 pagas: [], mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
             });
-            save(); render(); alert("Sincronizado!");
+            save(); render(); alert("Salvo!");
             document.getElementById('g-valor').value = ""; document.getElementById('l-valor').value = "";
+        }
+
+        function darBaixa(id, m) {
+            let i = db.movs.find(x => x.id === id);
+            if(!i.pagas) i.pagas = [];
+            i.pagas.push(m + "-" + new Date().getFullYear() + "|" + userAtivo);
+            save(); render();
         }
 
         function novaMeta() {
             let n = document.getElementById('m-nome').value;
-            let a = desmascararMoeda(document.getElementById('m-alvo').value); 
-            if (!n || a <= 0) return alert("Preencha os campos da meta!");
-            db.metas.push({ id: Date.now(), n, a, atual: 0 }); 
-            save(); render(); 
+            let a = desmascararMoeda(document.getElementById('m-alvo').value);
+            if(!n || a <= 0) return alert("Dados incompletos");
+            db.metas.push({ id: Date.now(), n, a, atual: 0 });
+            save(); render();
             document.getElementById('m-nome').value = ""; document.getElementById('m-alvo').value = "";
         }
 
@@ -426,91 +388,68 @@
                 document.getElementById('m-update-area').classList.remove('hidden');
                 let perc = Math.min((meta.atual/meta.a)*100, 100).toFixed(1);
                 document.getElementById('m-preview-bar').style.width = perc + "%";
-                document.getElementById('m-preview-details').innerHTML = `<span>Acumulado: <b>R$ ${meta.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${meta.a.toFixed(2)}</b></span>`;
+                document.getElementById('m-preview-details').innerHTML = `<span>R$ ${meta.atual.toFixed(2)}</span><span>Alvo: R$ ${meta.a.toFixed(2)}</span>`;
             } else document.getElementById('m-update-area').classList.add('hidden');
         }
 
-        function atualizarStatusMeta(operacao) {
-            let val = desmascararMoeda(document.getElementById('m-valor-deposito').value); 
+        function atualizarStatusMeta(op) {
+            let val = desmascararMoeda(document.getElementById('m-valor-deposito').value);
             let meta = db.metas.find(m => m.id == document.getElementById('m-select-update').value);
-            if (!meta || val <= 0) return alert("Selecione a meta e o valor!");
-            if(operacao === 'sub') val = -val;
-            meta.atual += val;
-            db.movs.push({
-                id: Date.now(), tipo: 'saida', d: (val > 0 ? "Guardado: " : "Retirado: ") + meta.n, v: Math.abs(val), cat: "🎯", 
-                totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear() + "|" + userAtivo], 
-                mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
-            });
-            save(); render(); 
-            document.getElementById('m-valor-deposito').value = ""; 
-            updateMetaPreview();
+            if(!meta || val <= 0) return;
+            meta.atual += (op === 'add' ? val : -val);
+            save(); render(); updateMetaPreview();
+            document.getElementById('m-valor-deposito').value = "";
         }
 
-        function darBaixa(id, m) {
-            let i = db.movs.find(x => x.id === id);
-            i.pagas.push(m + "-" + new Date().getFullYear() + "|" + userAtivo);
-            save(); render();
-        }
-
-        function enviarNotificacaoWhats(desc, valor, status) {
-            let destino = (userAtivo.toLowerCase() === 'arthur') ? TEL_NATASHA : TEL_ARTHUR;
-            let msg = status === 'pago' ? `Amor, paguei: *${desc}* (R$ ${valor.toFixed(2)})! ✅` : `Amor, conta pendente: *${desc}* (R$ ${valor.toFixed(2)}). ⏳`;
-            window.open(`https://wa.me/${destino}?text=${encodeURIComponent(msg)}`);
-        }
-
-        function setFiltro(f) {
-            filtroLista = f;
-            render();
-        }
+        function setFiltro(f) { filtroLista = f; render(); }
 
         function render() {
             const mSel = parseInt(document.getElementById('filt-mes').value || new Date().getMonth());
             const aSel = new Date().getFullYear();
             const lista = document.getElementById('lista');
             if(!lista) return;
-            lista.innerHTML = `<h3>Registros de ${mesesNomes[mSel]}</h3>`;
             
-            let si=0, so=0, ani=0, ano=0;
-            let totaisUsuarios = {}; 
+            lista.innerHTML = `<h3>Registros de ${mesesNomes[mSel]}</h3>`;
+            let si=0, so=0;
+            let totaisUser = { Arthur: 0, Natasha: 0 };
 
             db.movs.forEach(m => {
                 let diff = (mSel - m.mesI) + (12 * (aSel - m.anoI));
                 let pAt = diff + 1;
                 let vM = m.v / m.totalParc;
-                let autorCriacao = m.autor || 'Desconhecido';
-                let mostrarNoMes = (m.mesI === mSel && m.anoI === aSel) || (m.fixo && (m.anoI < aSel || (m.anoI === aSel && m.mesI <= mSel)));
+                let mostrar = (m.mesI === mSel && m.anoI === aSel) || (m.fixo && (m.anoI < aSel || (m.anoI === aSel && m.mesI <= mSel)));
 
                 if(m.tipo === 'entrada' && m.mesI === mSel) {
                     si += m.v;
                     if(filtroLista !== 'pendentes') {
-                        lista.innerHTML += `<div class="item-row"><div><span>💰 ${m.d}</span><span class="user-log-text">Por: ${autorCriacao}</span></div><b>R$ ${m.v.toFixed(2)}</b></div>`;
+                        lista.innerHTML += `<div class="item-row">
+                            <span>💰 ${m.d}</span>
+                            <span><b>R$ ${m.v.toFixed(2)}</b> <button class="btn-del" onclick="excluirMov(${m.id})">🗑️</button></span>
+                        </div>`;
                     }
-                } else if(m.tipo === 'saida' && ( (pAt > 0 && pAt <= m.totalParc) || (m.fixo && mostrarNoMes) )) {
-                    if (!totaisUsuarios[autorCriacao]) totaisUsuarios[autorCriacao] = 0;
-                    totaisUsuarios[autorCriacao] += vM;
-                    let tagPagamento = m.pagas.find(p => p.startsWith(mSel + "-" + aSel));
-                    let pago = !!tagPagamento;
-                    let autorBaixa = (pago && tagPagamento.includes('|')) ? tagPagamento.split('|')[1] : "";
+                } else if(m.tipo === 'saida' && ((pAt > 0 && pAt <= m.totalParc) || (m.fixo && mostrar))) {
+                    let pago = (m.pagas || []).some(p => p.startsWith(mSel + "-" + aSel));
                     if(pago) so += vM;
+                    totaisUser[m.autor || 'Arthur'] += vM;
 
-                    if ((filtroLista === 'pendentes' && !pago) || (filtroLista === 'pagos' && pago) || filtroLista === 'todos') {
-                        lista.innerHTML += `<div class="item-row"><div><span>${m.fixo ? '📌 ' : ''}${m.cat} ${m.d}</span><span class="user-log-text">Por: ${autorCriacao} ${pago ? '<br>Pago por: '+autorBaixa : ''}</span></div><span style="text-align: right;">R$ ${vM.toFixed(2)}<br>${!pago ? `<button onclick="darBaixa(${m.id},${mSel})" style="padding: 4px; background: var(--success); color: white; border: none; border-radius: 4px;">Pagar</button>` : '✅'}</span></div>`;
+                    if((filtroLista === 'todos') || (filtroLista === 'pendentes' && !pago) || (filtroLista === 'pagos' && pago)) {
+                        lista.innerHTML += `<div class="item-row">
+                            <div><span>${m.fixo ? '📌' : ''}${m.cat} ${m.d}</span><span class="user-log-text">Por: ${m.autor||'User'}</span></div>
+                            <span style="text-align:right">
+                                R$ ${vM.toFixed(2)}
+                                <button class="btn-del" onclick="excluirMov(${m.id})">🗑️</button><br>
+                                ${!pago ? `<button onclick="darBaixa(${m.id},${mSel})" style="background:var(--success);color:white;border:none;padding:5px;border-radius:5px;margin-top:4px">Pagar</button>` : '✅'}
+                            </span>
+                        </div>`;
                     }
-                }
-                if(m.anoI === aSel) {
-                    if(m.tipo === 'entrada') ani += m.v;
-                    m.pagas.forEach(p => { if(p.includes(aSel.toString())) ano += vM; });
                 }
             });
 
             document.getElementById('t-in').innerText = "R$ " + si.toFixed(2);
             document.getElementById('t-out').innerText = "R$ " + so.toFixed(2);
             document.getElementById('t-s').innerText = "R$ " + (si - so).toFixed(2);
-            document.getElementById('a-in').innerText = "R$ " + ani.toFixed(2);
-            document.getElementById('a-out').innerText = "R$ " + ano.toFixed(2);
-            document.getElementById('a-s').innerText = "R$ " + (ani - ano).toFixed(2);
-            document.getElementById('ano-txt').innerText = aSel;
-
+            document.getElementById('resumo-usuarios').innerHTML = `Arthur: R$ ${totaisUser.Arthur.toFixed(2)} | Natasha: R$ ${totaisUser.Natasha.toFixed(2)}`;
+            
             const sel = document.getElementById('m-select-update');
             const lMetas = document.getElementById('lista-metas');
             const lAnualM = document.getElementById('anual-metas-lista');
@@ -521,11 +460,21 @@
                 db.metas.forEach(m => {
                     sel.innerHTML += `<option value="${m.id}">${m.n}</option>`;
                     let p = Math.min((m.atual/m.a)*100, 100).toFixed(1);
-                    lMetas.innerHTML += `<div class="card"><b>${m.n}</b> (${p}%)<div class="progress-container"><div class="progress-bar" style="width:${p}%"></div></div></div>`;
+                    lMetas.innerHTML += `<div class="card">
+                        <b>${m.n}</b> (${p}%)
+                        <div class="progress-container"><div class="progress-bar" style="width:${p}%"></div></div>
+                        <button class="btn-main" style="background:var(--danger); padding:5px; font-size:12px" onclick="excluirMeta(${m.id})">Excluir Meta</button>
+                    </div>`;
                     lAnualM.innerHTML += `<div style="display:flex; justify-content:space-between"><span>${m.n}</span><b>${p}%</b></div>`;
                 });
                 sel.value = valAnt;
             }
+        }
+
+        function enviarWhatsGeral() {
+            let resumo = `📊 *BACKUP FINANCEIRO - ${new Date().getFullYear()}*\n\n`;
+            db.movs.slice(-15).forEach(m => { resumo += `- ${m.d}: R$ ${m.v.toFixed(2)}\n`; });
+            window.open(`https://wa.me/${userAtivo === 'Arthur' ? TEL_NATASHA : TEL_ARTHUR}?text=${encodeURIComponent(resumo)}`);
         }
     </script>
 </body>
