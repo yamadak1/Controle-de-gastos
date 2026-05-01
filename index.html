@@ -148,7 +148,7 @@
                     <option value="🔧">🔧 Manutenção</option>
                     <option value="✨">✨ Outros</option>
                 </select>
-                <input type="text" id="g-valor" placeholder="Valor Total R$" oninput="mascaraMoeda(this)">
+                <input type="text" id="g-valor" placeholder="Valor Total R$" oninput="mascaraMoeda(this)" inputmode="numeric">
                 <select id="g-forma" onchange="checkCartao()">
                     <option value="pix">Pix / À Vista</option>
                     <option value="cartao">Cartão de Crédito</option>
@@ -171,7 +171,7 @@
             <div class="card">
                 <h2>Registrar Entrada</h2>
                 <input type="text" id="l-desc" placeholder="Origem do dinheiro">
-                <input type="text" id="l-valor" placeholder="Valor R$" oninput="mascaraMoeda(this)">
+                <input type="text" id="l-valor" placeholder="Valor R$" oninput="mascaraMoeda(this)" inputmode="numeric">
                 <button class="btn-main" style="background: var(--success);" onclick="salvar('entrada')">Confirmar Entrada</button>
             </div>
         </section>
@@ -213,14 +213,14 @@
             <div class="card">
                 <h2>🎯 Nova Meta</h2>
                 <input type="text" id="m-nome" placeholder="Ex: Viagem, Reforma...">
-                <input type="text" id="m-alvo" placeholder="Valor Objetivo R$" oninput="mascaraMoeda(this)">
+                <input type="text" id="m-alvo" placeholder="Valor Objetivo R$" oninput="mascaraMoeda(this)" inputmode="numeric">
                 <button class="btn-main" style="background: var(--primary);" onclick="novaMeta()">Criar Meta</button>
                 <hr style="margin: 20px 0; opacity: 0.2;">
                 <h3>Atualizar Progresso</h3>
                 <label style="font-size: 12px;">Selecione a Meta:</label>
                 <select id="m-select-update" onchange="updateMetaPreview()"></select>
                 <div id="m-update-area" class="hidden">
-                    <input type="text" id="m-valor-deposito" placeholder="Valor R$" oninput="mascaraMoeda(this)">
+                    <input type="text" id="m-valor-deposito" placeholder="Valor R$" oninput="mascaraMoeda(this)" inputmode="numeric">
                     <div class="progress-container"><div id="m-preview-bar" class="progress-bar"></div></div>
                     
                     <div id="m-preview-details" style="display:flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;"></div>
@@ -257,10 +257,11 @@
             input.value = "R$ " + valor; // Adiciona o R$
         }
 
-        // Função para transformar a string R$ de volta em float para o banco de dados
+        // Função corrigida e reforçada para transformar a string R$ em float
         function desmascararMoeda(valorStr) {
-            if(!valorStr) return NaN;
-            let numerico = valorStr.replace(/\D/g, ""); // Pega só os números da string (ex: R$ 15,32 -> 1532)
+            if(!valorStr) return 0;
+            let numerico = String(valorStr).replace(/\D/g, ""); // Pega só os números
+            if(numerico === "") return 0;
             return parseFloat(numerico) / 100; // Divide por 100 pra transformar no float de novo
         }
 
@@ -273,12 +274,11 @@
                     if(!db.movs) db.movs = [];
                     if(!db.metas) db.metas = [];
                     
-                    // Lógica de migração e Reset Solicitado
                     if(!db.config) db.config = { foto: "" };
                     if(!db.config.senhas || db.config.pass) { 
-                        db.config.senhas = { arthur: "1234", natasha: "1234" }; // Força o reset inicial pra 1234
+                        db.config.senhas = { arthur: "1234", natasha: "1234" }; 
                         if(db.config.pass) delete db.config.pass;
-                        save(); // Atualiza o Firebase sem afetar outras coisas
+                        save(); 
                     }
                     render();
                 }
@@ -328,7 +328,6 @@
             let u = document.getElementById('user-login').value.trim();
             let p = document.getElementById('user-pass').value;
             
-            // Pega a chave da senha dependendo do nome
             let uKey = u.toLowerCase().includes('arthur') ? 'arthur' : 'natasha';
             
             if(!u || !db.config.senhas[uKey] || p !== db.config.senhas[uKey]) return alert("Dados incorretos!");
@@ -349,7 +348,6 @@
             if(!n1) return alert("Digite a nova senha!");
             if(n1 !== n2) return alert("Senhas não conferem!");
             
-            // Alterando apenas a senha do parceiro
             let uKeyParceiro = userAtivo.toLowerCase().includes('arthur') ? 'natasha' : 'arthur';
             db.config.senhas[uKeyParceiro] = n1;
             
@@ -366,7 +364,6 @@
             if(!n1 || n1 === "1234") return alert("Senha inválida!");
             if(n1 !== n2) return alert("Senhas não conferem!");
             
-            // Alterando apenas a própria senha
             let uKey = userAtivo.toLowerCase().includes('arthur') ? 'arthur' : 'natasha';
             db.config.senhas[uKey] = n1; 
             
@@ -401,11 +398,15 @@
         function checkCartao() { document.getElementById('box-parcelas').classList.toggle('hidden', document.getElementById('g-forma').value !== 'cartao'); }
 
         function salvar(tipo) {
-            // Usa o desmascararMoeda pra transformar R$ 15,32 em float 15.32 
             let vStr = tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value;
             let v = desmascararMoeda(vStr);
             
-            if (isNaN(v)) return;
+            // Tratativa de erro com aviso ao usuário
+            if (v <= 0) {
+                alert("Por favor, insira um valor válido maior que zero!");
+                return;
+            }
+
             let fixo = tipo === 'saida' ? document.getElementById('g-fixo').checked : false;
 
             db.movs.push({
@@ -417,6 +418,8 @@
                 pagas: [], mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
             });
             save(); render(); alert("Sincronizado!");
+            
+            // Limpa os campos após salvar
             document.getElementById('g-valor').value = ""; document.getElementById('l-valor').value = "";
             document.getElementById('g-desc').value = ""; document.getElementById('l-desc').value = "";
             if(document.getElementById('g-fixo')) document.getElementById('g-fixo').checked = false;
@@ -424,8 +427,16 @@
 
         function novaMeta() {
             let n = document.getElementById('m-nome').value;
-            let a = desmascararMoeda(document.getElementById('m-alvo').value); // Usa conversor
-            if (n && !isNaN(a)) { db.metas.push({ id: Date.now(), n, a, atual: 0 }); save(); render(); }
+            let a = desmascararMoeda(document.getElementById('m-alvo').value); 
+            
+            if (!n) return alert("Por favor, digite um nome para a nova meta.");
+            if (a <= 0) return alert("Por favor, digite um valor alvo válido maior que zero.");
+            
+            db.metas.push({ id: Date.now(), n, a, atual: 0 }); 
+            save(); render(); 
+            
+            document.getElementById('m-nome').value = "";
+            document.getElementById('m-alvo').value = "";
         }
 
         function updateMetaPreview() {
@@ -439,18 +450,26 @@
         }
 
         function atualizarStatusMeta(operacao) {
-            let val = desmascararMoeda(document.getElementById('m-valor-deposito').value); // Usa conversor
-            let meta = db.metas.find(m => m.id == document.getElementById('m-select-update').value);
-            if (meta && !isNaN(val)) {
-                if(operacao === 'sub') val = -val;
-                meta.atual += val;
-                db.movs.push({
-                    id: Date.now(), tipo: 'saida', d: (val > 0 ? "Guardado: " : "Retirado: ") + meta.n, v: Math.abs(val), cat: "🎯", 
-                    totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear() + "|" + userAtivo], 
-                    mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
-                });
-                save(); render(); document.getElementById('m-valor-deposito').value = ""; updateMetaPreview();
-            }
+            let val = desmascararMoeda(document.getElementById('m-valor-deposito').value); 
+            let idMeta = document.getElementById('m-select-update').value;
+            let meta = db.metas.find(m => m.id == idMeta);
+            
+            // Verificações com alertas
+            if (!meta) return alert("Por favor, selecione uma meta na lista antes de atualizar.");
+            if (val <= 0) return alert("Por favor, insira um valor válido maior que zero!");
+
+            if(operacao === 'sub') val = -val;
+            meta.atual += val;
+            
+            db.movs.push({
+                id: Date.now(), tipo: 'saida', d: (val > 0 ? "Guardado: " : "Retirado: ") + meta.n, v: Math.abs(val), cat: "🎯", 
+                totalParc: 1, pagas: [new Date().getMonth() + "-" + new Date().getFullYear() + "|" + userAtivo], 
+                mesI: new Date().getMonth(), anoI: new Date().getFullYear(), autor: userAtivo
+            });
+            
+            save(); render(); 
+            document.getElementById('m-valor-deposito').value = ""; 
+            updateMetaPreview();
         }
 
         function darBaixa(id, m) {
@@ -565,20 +584,3 @@
             const lAnualM = document.getElementById('anual-metas-lista');
             const valAnt = sel.value;
             sel.innerHTML = '<option value="">-- Escolha uma meta --</option>';
-            lMetas.innerHTML = ""; lAnualM.innerHTML = "<h3>Progresso das Metas</h3>";
-            db.metas.forEach(m => {
-                sel.innerHTML += `<option value="${m.id}">${m.n}</option>`;
-                let p = Math.min((m.atual/m.a)*100, 100).toFixed(1);
-                lMetas.innerHTML += `<div class="card"><b>${m.n}</b> (${p}%)<div class="progress-container"><div class="progress-bar" style="width:${p}%\"></div></div><div style="display:flex; justify-content:space-between; font-size:12px"><span>Acumulado: <b>R$ ${m.atual.toFixed(2)}</b></span><span>Alvo: <b>R$ ${m.a.toFixed(2)}</b></span></div></div>`;
-                lAnualM.innerHTML += `<div style="display:flex; justify-content:space-between; margin:8px 0"><span>${m.n}</span><b>${p}%</b></div>`;
-            });
-            sel.value = valAnt;
-        }
-
-        function enviarWhatsGeral() {
-            let msg = `📊 *BALANÇO FAMILIAR ${new Date().getFullYear()}*`;
-            window.open(`https://wa.me/?text=${msg}`);
-        }
-    </script>
-</body>
-</html>
