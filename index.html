@@ -148,7 +148,7 @@
                     <option value="🔧">🔧 Manutenção</option>
                     <option value="✨">✨ Outros</option>
                 </select>
-                <input type="number" id="g-valor" placeholder="Valor Total R$">
+                <input type="text" id="g-valor" placeholder="Valor Total R$" oninput="mascaraMoeda(this)">
                 <select id="g-forma" onchange="checkCartao()">
                     <option value="pix">Pix / À Vista</option>
                     <option value="cartao">Cartão de Crédito</option>
@@ -171,7 +171,7 @@
             <div class="card">
                 <h2>Registrar Entrada</h2>
                 <input type="text" id="l-desc" placeholder="Origem do dinheiro">
-                <input type="number" id="l-valor" placeholder="Valor R$">
+                <input type="text" id="l-valor" placeholder="Valor R$" oninput="mascaraMoeda(this)">
                 <button class="btn-main" style="background: var(--success);" onclick="salvar('entrada')">Confirmar Entrada</button>
             </div>
         </section>
@@ -213,14 +213,14 @@
             <div class="card">
                 <h2>🎯 Nova Meta</h2>
                 <input type="text" id="m-nome" placeholder="Ex: Viagem, Reforma...">
-                <input type="number" id="m-alvo" placeholder="Valor Objetivo R$">
+                <input type="text" id="m-alvo" placeholder="Valor Objetivo R$" oninput="mascaraMoeda(this)">
                 <button class="btn-main" style="background: var(--primary);" onclick="novaMeta()">Criar Meta</button>
                 <hr style="margin: 20px 0; opacity: 0.2;">
                 <h3>Atualizar Progresso</h3>
                 <label style="font-size: 12px;">Selecione a Meta:</label>
                 <select id="m-select-update" onchange="updateMetaPreview()"></select>
                 <div id="m-update-area" class="hidden">
-                    <input type="number" id="m-valor-deposito" placeholder="Valor R$">
+                    <input type="text" id="m-valor-deposito" placeholder="Valor R$" oninput="mascaraMoeda(this)">
                     <div class="progress-container"><div id="m-preview-bar" class="progress-bar"></div></div>
                     
                     <div id="m-preview-details" style="display:flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;"></div>
@@ -242,10 +242,27 @@
         const TEL_ARTHUR = "5585982008344";
         const TEL_NATASHA = "5585982007621";
 
-        let db = { movs: [], metas: [], config: { pass: "1234", foto: "" } };
+        let db = { movs: [], metas: [], config: { senhas: { arthur: "1234", natasha: "1234" }, foto: "" } };
         let userAtivo = "";
         let filtroLista = 'todos'; 
         const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        // Função para formatar enquanto digita o dinheiro
+        function mascaraMoeda(input) {
+            let valor = input.value.replace(/\D/g, ""); // Remove tudo o que não for número
+            if (valor === "") { input.value = ""; return; }
+            valor = (parseInt(valor) / 100).toFixed(2) + ""; // Divide por 100 pra criar os centavos
+            valor = valor.replace(".", ","); // Troca ponto por vírgula
+            valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1."); // Coloca ponto a cada milhar
+            input.value = "R$ " + valor; // Adiciona o R$
+        }
+
+        // Função para transformar a string R$ de volta em float para o banco de dados
+        function desmascararMoeda(valorStr) {
+            if(!valorStr) return NaN;
+            let numerico = valorStr.replace(/\D/g, ""); // Pega só os números da string (ex: R$ 15,32 -> 1532)
+            return parseFloat(numerico) / 100; // Divide por 100 pra transformar no float de novo
+        }
 
         async function load() {
             try {
@@ -255,7 +272,14 @@
                     db = data;
                     if(!db.movs) db.movs = [];
                     if(!db.metas) db.metas = [];
-                    if(!db.config) db.config = { pass: "1234", foto: "" };
+                    
+                    // Lógica de migração e Reset Solicitado
+                    if(!db.config) db.config = { foto: "" };
+                    if(!db.config.senhas || db.config.pass) { 
+                        db.config.senhas = { arthur: "1234", natasha: "1234" }; // Força o reset inicial pra 1234
+                        if(db.config.pass) delete db.config.pass;
+                        save(); // Atualiza o Firebase sem afetar outras coisas
+                    }
                     render();
                 }
             } catch(e) { console.error("Erro na carga."); }
@@ -303,7 +327,12 @@
         function autenticar() {
             let u = document.getElementById('user-login').value.trim();
             let p = document.getElementById('user-pass').value;
-            if(!u || p !== db.config.pass) return alert("Dados incorretos!");
+            
+            // Pega a chave da senha dependendo do nome
+            let uKey = u.toLowerCase().includes('arthur') ? 'arthur' : 'natasha';
+            
+            if(!u || !db.config.senhas[uKey] || p !== db.config.senhas[uKey]) return alert("Dados incorretos!");
+            
             userAtivo = u;
             if(document.getElementById('remember-me').checked) localStorage.setItem('saved_user_fam', u);
             else localStorage.removeItem('saved_user_fam');
@@ -320,7 +349,10 @@
             if(!n1) return alert("Digite a nova senha!");
             if(n1 !== n2) return alert("Senhas não conferem!");
             
-            db.config.pass = n1;
+            // Alterando apenas a senha do parceiro
+            let uKeyParceiro = userAtivo.toLowerCase().includes('arthur') ? 'natasha' : 'arthur';
+            db.config.senhas[uKeyParceiro] = n1;
+            
             save();
             alert("Senha do parceiro atualizada no servidor!");
             document.getElementById('partner-new-pass').value = "";
@@ -333,7 +365,12 @@
             let n2 = document.getElementById('confirm-new-pass').value;
             if(!n1 || n1 === "1234") return alert("Senha inválida!");
             if(n1 !== n2) return alert("Senhas não conferem!");
-            db.config.pass = n1; save();
+            
+            // Alterando apenas a própria senha
+            let uKey = userAtivo.toLowerCase().includes('arthur') ? 'arthur' : 'natasha';
+            db.config.senhas[uKey] = n1; 
+            
+            save();
             document.getElementById('update-pass-screen').classList.add('hidden');
             entrarNoSistema();
         }
@@ -364,7 +401,10 @@
         function checkCartao() { document.getElementById('box-parcelas').classList.toggle('hidden', document.getElementById('g-forma').value !== 'cartao'); }
 
         function salvar(tipo) {
-            let v = parseFloat(tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value);
+            // Usa o desmascararMoeda pra transformar R$ 15,32 em float 15.32 
+            let vStr = tipo === 'saida' ? document.getElementById('g-valor').value : document.getElementById('l-valor').value;
+            let v = desmascararMoeda(vStr);
+            
             if (isNaN(v)) return;
             let fixo = tipo === 'saida' ? document.getElementById('g-fixo').checked : false;
 
@@ -383,8 +423,9 @@
         }
 
         function novaMeta() {
-            let n = document.getElementById('m-nome').value, a = parseFloat(document.getElementById('m-alvo').value);
-            if (n && a) { db.metas.push({ id: Date.now(), n, a, atual: 0 }); save(); render(); }
+            let n = document.getElementById('m-nome').value;
+            let a = desmascararMoeda(document.getElementById('m-alvo').value); // Usa conversor
+            if (n && !isNaN(a)) { db.metas.push({ id: Date.now(), n, a, atual: 0 }); save(); render(); }
         }
 
         function updateMetaPreview() {
@@ -398,7 +439,7 @@
         }
 
         function atualizarStatusMeta(operacao) {
-            let val = parseFloat(document.getElementById('m-valor-deposito').value);
+            let val = desmascararMoeda(document.getElementById('m-valor-deposito').value); // Usa conversor
             let meta = db.metas.find(m => m.id == document.getElementById('m-select-update').value);
             if (meta && !isNaN(val)) {
                 if(operacao === 'sub') val = -val;
